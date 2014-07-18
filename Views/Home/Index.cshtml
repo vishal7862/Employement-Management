@@ -1,0 +1,545 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="jumbotron">
+    <button class="btn btn-primary btn-lg" id="OpenDialog">
+        Create New
+    </button>
+
+    <button class="btn btn-primary btn-lg" id="OpenDialog1">
+        Create New
+    </button>
+
+    <div id="Spinner" style="display:none;position: relative;right:135px;bottom:48px">
+        <img src="~/Images/spin.gif" />
+    </div>
+    <div>
+        <table class="table" border="1" id="tblEmp" style="display: none">
+            <tr>
+                <td>Id</td>
+                <td>Name</td>
+                <td>Department</td>
+                <td>Actions</td>
+            </tr>
+        </table>
+        <table class="table" border="1" id="tblDept" style="display: none">
+            <tr>
+                <td>Id</td>
+                <td>Name</td>
+                <td>Actions</td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+
+<!--Dialogs of Employees-->
+<!--Dialog For Create -->
+<div id="dialog" title="Create" style="text-align: left;display: none;">
+    <div id="chkk">
+        <div>
+            Name:<input class="control-label" style="position: relative;left: 20px" type="text" id="Name" />
+        </div>
+        <br />
+        <div>
+            Department Name:
+            <select id="DropDown" class="ui-droppable"></select>
+        </div>
+
+        <br />
+        <div>
+            <input type="button" value="Create" class="btn btn-default" id="btn_save" onclick="EmpEntry()" />
+        </div>
+    </div>
+</div>
+<!--Dialog for Edit-->
+<div id="dialog1" title="Edit" style="text-align: left;display: none;">
+    <div>
+        Name:<input class="control-label" style="position: relative;left: 20px" type="text" id="Name1" />
+    </div>
+    <br />
+    <div>
+        Department Name:
+        <select id="DropDown1" class="ui-droppable"></select>
+    </div>
+    <div id="EditId" style=""></div>
+    <br />
+    <div>
+        <input type="button" value="Edit" class="btn btn-default" id="btn_save" onclick="EmpEdit()" />
+    </div>
+</div>
+
+
+<!--Dialogs of Departments-->
+<!--Dialog For Create -->
+<div id="dialog2" title="Create" style="text-align: left;display: none;">
+    <div>
+        Name:<input class="control-label" style="position: relative;left: 20px" type="text" id="DeptName" />
+    </div>
+    <br />
+    <div>
+        <input type="button" value="Create" class="btn btn-default" id="btn_save" onclick="DeptEntry()" />
+    </div>
+</div>
+
+<div id="dialog3" title="Edit" style="text-align: left;display: none;">
+    <div>
+        Name:<input class="control-label" style="position: relative;left: 20px" type="text" id="DeptName1" />
+    </div>
+    <div id="EditDeptId" style=""></div>
+    <br />
+    <div>
+        <input type="button" value="Create" class="btn btn-default" id="btn_save" onclick="DeptEdit()" />
+    </div>
+</div>
+
+
+@section scripts
+{
+    <!--Employees Scripts-->
+    <script>
+
+        function ChkEntry(id) {
+
+            $("#tblEmp").append("<tr>" + "<td>" + id + "</td>" + "<td>" + $("#Name").val() + "</td>" + "<td>" + $("#DropDown option:selected").text() + "</td>" + "<td>" + "<a href='#' class='Edit' attr1='" + id + "'>" + "Edit</a>" + "|" + "<a href='#' class='Delete' attr2='" + id + "'>" + "Delete</a>" + "</td>" + "</tr>");
+
+        }
+
+        function EmpEntry() {
+            var name = document.getElementById("Name").value;
+            var id;
+            var defaultnum = document.getElementById("DropDown").value;
+            $.ajax({
+                url: "/Home/CreateEmployee",
+                type: "POST",
+                data: { name: name, departmentid: defaultnum },
+                datatype: "json",
+                success: function(data) {
+                    id = data;
+                    ChkEntry(id);
+                    $("#dialog").dialog('close');
+                    $("#Name").val("");
+                },
+                error: function(data) {
+                    alert("fail");
+                }
+            });
+
+        }
+
+        function FetchAllEmp() {
+            $("#OpenDialog1").hide();
+            $("#tblEmp").show();
+            $("#Spinner").show();
+            $.ajax({
+                url: "/Home/GetAllEmployee",
+                type: "GET",
+                datatype: "json",
+                success: function(data) {
+                    var jsonObj = JSON.parse(data);
+                    $("#Spinner").hide();
+                    $.each(jsonObj, function(i, item) {
+
+                        $("#tblEmp").append("<tr>" + "<td>" + item.Id + "</td>" + "<td>" + item.Name + "</td>" + "<td>" + item.Department.Name + "</td>" + "<td>" + "<a href='#' class='Edit' attr1='" + item.Id + "'>" + "Edit</a>" + "|" + "<a href='#' class='Delete' attr2='" + item.Id + "'>" + "Delete</a>" + "</td>" + "</tr>");
+
+                    });
+                },
+                error: function(data) {
+                    alert("fail");
+                }
+            });
+        }
+
+        function FetchDataDropDown() {
+
+            $.ajax({
+                url: "/Home/LoadDropDownList",
+                type: "GET",
+
+                datatype: "json",
+                success: function(data) {
+                    $("#DropDown1").empty();
+                    var jsonObj = JSON.parse(data);
+                    $.each(jsonObj, function(index, optiondata) {
+                        $("#DropDown1").append("<option value='" + optiondata.Id + "'>" + optiondata.Name + "</option>");
+                    });
+
+                },
+                error: function(data) {
+                    alert("fail");
+                }
+            });
+        }
+
+        function EmpEdit() {
+            var id = $("#EditId").val();
+            var deptid = document.getElementById("DropDown1").value;
+            var name = document.getElementById("Name1").value;
+            $.ajax({
+                url: "/Home/EditEmp",
+                type: "POST",
+                data: { id: id, name: name, departmentid: deptid },
+                datatype: "json",
+                success: function(data) {
+                    $("#tblEmp").empty();
+                    $("#tblEmp").append("<tr>" + "<td>" + "Id" + "</td>" + "<td>" + "Name" + "</td>" + "<td>" + "Department" + "</td>" + "<td>" + "Action" + "</td>" + "</tr>");
+                    FetchAllEmp();
+                    $("#dialog1").dialog('close');
+                },
+                error: function(data) {
+                    alert("fail");
+                }
+            });
+        }
+
+    </script>
+    <!--Testing-->
+    <!--
+        <script>
+
+             var oEmployeesTable = $('#tblEmp').dataTable({
+                 "bJQueryUI": true,
+                 "bServerSide": true,
+                 "sAjaxSource": "/Home/GetAllEmployee"
+             });
+
+
+             $("#btn_save").click(function(e) {
+                 var name = document.getElementById("Name").value;
+                 var defaultnum = document.getElementById("DropDown").value;
+                 e.preventDefault();
+                 e.stopPropagation();
+                 $.ajax({
+                     url: "/Home/CreateEmployee",
+                     type: "POST",
+                     data: { name: name, departmentid: defaultnum },
+                     datatype: "json",
+                     success: function(data) {
+                         $("#dialog").dialog('close');
+                         oEmployeesTable.fnDraw();
+                     },
+                     error: function(data) {
+                         alert("fail");
+                     }
+                 });
+             });
+
+
+     </script>
+        -->
+    <!--CompletedTesting-->
+    <!--Department Scripts-->
+    <script>
+        function ChkDept(id) {
+
+            $("#tblDept").append("<tr>" + "<td>" + id + "</td>" + "<td>" + $("#DeptName").val() + "</td>" + "<td>" + "<a href='#' class='EditDept' attr3='" + id + "'>" + "Edit</a>" + "|" + "<a href='#' class='DeleteDept' attr4='" + id + "'>" + "Delete</a>" + "</td>" + "</tr>");
+
+        }
+
+        function displayDeptAll() {
+            $("#tblDept").show();
+            $("#Spinner").show();
+            $.ajax({
+                url: "/Home/GetAllDepartments",
+                type: "Get",
+                datatype: "json",
+                success: function(data) {
+                    var jsonObj = JSON.parse(data);
+                    $("#Spinner").hide();
+                    $.each(jsonObj, function(i, item) {
+
+                        $("#tblDept").append("<tr>" + "<td>" + item.Id + "</td>" + "<td>" + item.Name + "</td>" + "<td>" + "<a href='#' class='EditDept' attr3='" + item.Id + "'>" + "Edit</a>" + "|" + "<a href='#' class='DeleteDept' attr4='" + item.Id + "'>" + "Delete</a>" + "</td>" + "</tr>");
+
+                    });
+                },
+                error: function(data) {
+                    console.log(data);
+                }
+            });
+        };
+
+        function DeptEntry() {
+            var name = document.getElementById("DeptName").value;
+            var id;
+            $.ajax({
+                url: "/Home/CreateDepartment",
+                type: "POST",
+                data: { name: name },
+                datatype: "json",
+                success: function(data) {
+                    id = data;
+                    ChkDept(id);
+
+                    $("#dialog2").dialog("close");
+                    $("#Name").val("");
+                },
+                error: function(data) {
+                    alert("fail");
+                }
+            });
+        }
+
+
+        function DeptEdit() {
+            var id = $("#EditDeptId").val();
+            var name = document.getElementById("DeptName1").value;
+            $.ajax({
+                url: "/Home/EditDept",
+                type: "POST",
+                data: { id: id, name: name },
+                datatype: "json",
+                success: function(data) {
+                    $("#tblDept").empty();
+                    $("#tblDept").append("<tr>" + "<td>" + "Id" + "</td>" + "<td>" + "Name" + "</td>" + "<td>" + "Actions" + "</td>" + "</tr>");
+                    displayDeptAll();
+                    $("#dialog3").dialog('close');
+
+                },
+                error: function(data) {
+                    alert("fail");
+                }
+            });
+        }
+
+
+        function DeleteDept(obj) {
+            var id = obj.attr('attr4');
+
+            $.ajax({
+                url: "/Home/DeleteDept",
+                type: "POST",
+                data: { id: id },
+                datatype: "json",
+                success: function(data) {
+                    $("#tblDept").empty();
+                    $("#tblDept").append("<tr>" + "<td>" + "Id" + "</td>" + "<td>" + "Name" + "</td>" + "<td>" + "Actions" + "</td>" + "</tr>");
+                    displayDeptAll();
+                    $("#dialog2").dialog("close");
+                },
+                error: function(data) {
+                    alert("fail");
+                }
+            });
+        }
+    </script>
+
+
+
+    <!--general scripts-->
+    <script>
+        $(function() {
+            var x = 0;
+            FetchAllEmp();
+
+            FetchDataDropDown();
+
+            $("#DeptLink").click(function() {
+                $("#tblDept").empty();
+                $("#tblDept").append("<tr>" + "<td>" + "Id" + "</td>" + "<td>" + "Name" + "</td>" + "<td>" + "Actions" + "</td>" + "</tr>");
+                displayDeptAll();
+                $("#OpenDialog1").show();
+                $("#tblDept").show();
+                $("#tblEmp").hide();
+                $("#OpenDialog").hide();
+                x = 1;
+            });
+
+
+            $("#EmpLink").click(function() {
+                FetchDataDropDown();
+                $("#tblEmp").empty();
+                $("#tblEmp").append("<tr>" + "<td>" + "Id" + "</td>" + "<td>" + "Name" + "</td>" + "<td>" + "Department" + "</td>" + "<td>" + "Action" + "</td>" + "</tr>");
+                FetchAllEmp();
+                $("#OpenDialog").show();
+                $("#tblDept").hide();
+                $("#OpenDialog1").hide();
+                x = 2;
+            });
+
+
+            $("#dialog").dialog({
+                height: 300,
+                width: 600,
+                autoOpen: false,
+                show: {
+                    effect: "blind",
+                    duration: 1000
+
+                },
+                hide: {
+                    effect: "explode",
+                    duration: 1000
+                }
+            });
+
+
+            $("#dialog1").dialog({
+                height: 300,
+                width: 600,
+                autoOpen: false,
+                resizable: false,
+                show: {
+                    effect: "blind",
+                    duration: 1000
+
+                },
+                hide: {
+                    effect: "explode",
+                    duration: 1000
+                },
+            });
+
+            $("#dialog3").dialog({
+                height: 300,
+                width: 600,
+                autoOpen: false,
+                show: {
+                    effect: "blind",
+                    duration: 1000
+
+                },
+                hide: {
+                    effect: "explode",
+                    duration: 1000
+                }
+            });
+
+            $("#dialog2").dialog({
+                height: 300,
+                width: 600,
+                autoOpen: false,
+                resizable: false,
+                show: {
+                    effect: "blind",
+                    duration: 1000
+
+                },
+                hide: {
+                    effect: "explode",
+                    duration: 1000
+                },
+
+
+            });
+
+            $("#OpenDialog").click(function() {
+
+                $.ajax({
+                    url: "/Home/LoadDropDownList",
+                    type: "GET",
+
+                    datatype: "json",
+                    success: function(data) {
+                        $("#dialog").dialog("open");
+                        $("#DropDown").empty();
+                        var jsonObj = JSON.parse(data);
+                        debugger;
+                        if (jsonObj != "") {
+                            $.each(jsonObj, function(index, optiondata) {
+
+                                $("#DropDown").append("<option value='" + optiondata.Id + "'>" + optiondata.Name + "</option>");
+                            });
+                        } else {
+                            $("#chkk").empty();
+                            $("#chkk").append("<p><b>Please create a new department first to assign it to an employ!</b></p>");
+                            setTimeout(function () {
+                                $("#dialog").dialog("close");
+
+                                var url = '@Url.Action("Index", "Home")';
+                                window.location.href = url;
+                            }, 4000);
+                           
+                        }
+                    },
+                    error: function(data) {
+                        alert("fail");
+                    }
+                });
+
+            });
+
+
+            $("#OpenDialog1").click(function() {
+
+
+                $("#dialog2").dialog("open");
+            });
+
+
+            $(document).on('click', '.Edit', function() {
+                var id = $(this).attr("attr1");
+                $.ajax({
+                    url: "/Home/GetEmpById",
+                    type: "Get",
+                    async: true,
+                    contentType: 'application/json; charset=utf-8',
+                    data: { id: id },
+                    datatype: "json",
+                    success: function(result) {
+                        var jsonObj = JSON.parse(result);
+                        $("#dialog1").dialog('open');
+                        $("#Name1").val(jsonObj.Name);
+                        $("#DropDown1").val(jsonObj.DepartmentId);
+                        $("#EditId").val(id);
+                    },
+                    error: function(result) {
+
+                        alert('fail');
+                    }
+                });
+            });
+
+            $(document).on('click', '.Delete', function() {
+                var id = $(this).attr("attr2");
+
+                $.ajax({
+                    url: "/Home/DeleteEmp",
+                    type: "POST",
+                    data: { id: id },
+                    datatype: "json",
+                    success: function(data) {
+                        $("#tblEmp").empty();
+                        $("#tblEmp").append("<tr>" + "<td>" + "Id" + "</td>" + "<td>" + "Name" + "</td>" + "<td>" + "Department" + "</td>" + "<td>" + "Action" + "</td>" + "</tr>");
+                        FetchAllEmp();
+                    },
+                    error: function(data) {
+                        alert("fail");
+                    }
+                });
+
+            });
+
+            $(document).on('click', '.EditDept', function() {
+                var id = $(this).attr("attr3");
+
+                $.ajax({
+                    url: "/Home/GetDeptById",
+                    type: "Get",
+                    async: true,
+                    contentType: 'application/json; charset=utf-8',
+                    data: { id: id },
+                    datatype: "json",
+                    success: function(result) {
+                        var jsonObj = JSON.parse(result);
+                        $("#dialog3").dialog('open');
+                        $("#DeptName1").val(jsonObj.Name);
+                        $("#EditDeptId").val(id);
+                    },
+                    error: function(result) {
+
+                        alert('fail');
+                    }
+                });
+            });
+
+            $(document).on('click', '.DeleteDept', function() {
+
+                DeleteDept($(this));
+
+            });
+
+        });
+    </script>
+}
+
